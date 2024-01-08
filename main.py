@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 import requests
 from io import StringIO
 
@@ -11,31 +10,28 @@ response = requests.get(url)
 data_csv = StringIO(response.text)
 df = pd.read_csv(data_csv)
 
-# Scatter plot using Plotly Express
-scatter_plot = px.scatter(df, x="BMI", y="BloodPressure", color="Age",
-                          labels={'Age': 'Age (years)', 'BMI': 'BMI', 'BloodPressure': 'Blood Pressure'})
-
-# Histogram for 'Age' column
-age_histogram = px.histogram(df, x="Age", nbins=20, labels={'Age': 'Age (years)', 'Count': 'Number of Records'})
-
-# Bar chart for count of each unique value in 'Outcome' column
-outcome_counts_bar = px.bar(df['Outcome'].value_counts(), x=df['Outcome'].unique(), y=df['Outcome'].value_counts(),
-                            labels={'x': 'Outcome', 'y': 'Count'}, title='Outcome Distribution')
-
 # Streamlit app
 st.title("Diabetes Dashboard")
 
-# Dropdown for filtering based on 'Outcome' column
-selected_outcome = st.selectbox('Select Outcome:', df['Outcome'].unique())
+# Sidebar with interactive components
+selected_outcome = st.sidebar.selectbox('Select Outcome:', df['Outcome'].unique())
+age_filter = st.sidebar.slider('Filter by Age:', min_value=df['Age'].min(), max_value=df['Age'].max(),
+                               value=(df['Age'].min(), df['Age'].max()))
 
-# Filtered dataframe based on selected 'Outcome'
-filtered_df = df[df['Outcome'] == selected_outcome]
+# Filtered dataframe based on selected 'Outcome' and age range
+filtered_df = df[(df['Outcome'] == selected_outcome) & (df['Age'] >= age_filter[0]) & (df['Age'] <= age_filter[1])]
 
 # Display scatter plot
-st.plotly_chart(scatter_plot.update_traces(marker=dict(size=8)), use_container_width=True)
+st.plotly_chart(px.scatter(filtered_df, x="BMI", y="BloodPressure", color="Age").update_traces(marker=dict(size=8)),
+                use_container_width=True)
 
 # Display histogram for 'Age' column
-st.plotly_chart(age_histogram, use_container_width=True)
+st.plotly_chart(
+    px.histogram(filtered_df, x="Age", nbins=20, labels={'Age': 'Age (years)', 'Count': 'Number of Records'}),
+    use_container_width=True)
 
 # Display bar chart for count of each unique value in 'Outcome' column
-st.plotly_chart(outcome_counts_bar.update_traces(marker_color='royalblue'), use_container_width=True)
+st.plotly_chart(px.bar(filtered_df['Outcome'].value_counts(), x=filtered_df['Outcome'].unique(),
+                       y=filtered_df['Outcome'].value_counts(),
+                       labels={'x': 'Outcome', 'y': 'Count'}, title='Outcome Distribution').update_traces(
+    marker_color='royalblue'), use_container_width=True)
