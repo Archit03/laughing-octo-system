@@ -1,2 +1,2 @@
 # laughing-octo-system
-Data visualization Dashboard build with ChatGPT and streamlit, written in python
+Data application built with ChatGPT and Streamlit, written in python
